@@ -41,7 +41,11 @@
     "webpack-dev-server": "^1.12.1"
   },
   "dependencies": {
-    "react": "^0.14.6",
-    "react-dom": "^0.14.6"
+    "aphrodite": "^0.5.0",
+    "react": "^15.2.1",
+    "react-dom": "^0.14.6",
+    "react-three-renderer": "^2.2.0",
+    "three": "^0.79.0",
+    "three-trackballcontrols": "0.0.5"
   }
 }
