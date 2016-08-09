@@ -5,8 +5,9 @@ import React3 from 'react-three-renderer';
 import TrackballControls from 'three-trackballcontrols'
 
 export default class Geometry extends Component {
-	constructor(props, context) {
-    super(props, context);
+	constructor(props) {
+    super(props);
+    this.fog = new THREE.Fog(0x001525, 10, 40);
 
     this.state = { 
     	cameraPosition: new THREE.Vector3(0, 0, 5)
@@ -45,32 +46,33 @@ export default class Geometry extends Component {
     const width = window.innerWidth; // canvas width
     const height = window.innerHeight; // canvas height
 
-    return (<React3
-    		ref="react3"
-	      mainCamera="camera"
-	      width={width}
-	      height={height}
-	      pixelRatio={window.devicePixelRatio}
-	      onAnimate={this._onAnimate}
-        clearColor={0xf0f0f0}
-	       >
-      <scene>
-        <perspectiveCamera
-        	ref="camera"
-        	name="camera"
-          fov={100}
-          aspect={width / height}
-          near={0.2}
-          far={1000}
-          position={this.state.cameraPosition}/>
-        	<mesh>
-	          <boxGeometry
-	            width={1}
-	            height={1}
-	            depth={1} />
-          <meshBasicMaterial color={0x00ff00} />
-        </mesh>
-      </scene>
-    </React3>);
+    return (
+        <React3
+      		ref="react3"
+  	      mainCamera="camera"
+  	      width={width}
+  	      height={height}
+  	      pixelRatio={window.devicePixelRatio}
+  	      onAnimate={this._onAnimate}
+          clearColor={this.fog.color}
+  	       >
+        <scene>
+          <perspectiveCamera
+          	ref="camera"
+          	name="camera"
+            fov={100}
+            aspect={width / height}
+            near={0.2}
+            far={1000}
+            position={this.state.cameraPosition}/>
+          	<mesh>
+  	          <boxGeometry
+  	            width={1}
+  	            height={1}
+  	            depth={1} />
+            <meshBasicMaterial color={0x00ff00} />
+          </mesh>
+        </scene>
+      </React3>);
 	}
 }

@@ -21,10 +21,18 @@ module.exports = {
     new webpack.HotModuleReplacementPlugin()
   ],
   module: {
-    loaders: [{
+    loaders: [
+    {
       test: /\.js$/,
       loaders: ['react-hot', 'babel'],
-      include: path.join(__dirname, 'src'),
-    }]
+      include: path.join(__dirname, 'src')
+    }
+    ],
+    postLoaders: [
+      {
+        include: path.resolve(__dirname, 'node_modules/pixi.js'),
+        loader: 'transform/cacheable?brfs!ify'
+      }
+    ]
   }
 };
