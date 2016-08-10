@@ -1,8 +1,18 @@
+// React
 import React, { Component } from 'react';
+import update from 'react-addons-update';
+
+// Components
 import Geometry from './Components/Geometry'
 import Piano from './Components/Piano'
+import NoteStack from './Components/NoteStack'
 import Controls from './Components/Controls'
 import Settings from './Components/Settings'
+
+// Utilities
+import Midi from './Utils/Midi'
+
+// Themes and CSS
 import darkBaseTheme from 'material-ui/styles/baseThemes/darkBaseTheme';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import getMuiTheme from 'material-ui/styles/getMuiTheme';
@@ -13,47 +23,42 @@ export default class App extends Component {
     super();
 
     this.state = {
-      midi: null,
+      midiAccess: null,
       settings: false,
+      noteStack: [],
+      keys: new Array(128),
+      commandHeld: false
     }
   }
 
   componentWillMount() {
-    this.configureMidi()
-  }
+    Midi.getInputs((midiAccess) => {
+      this.setState({ midiAccess: midiAccess });
 
-  configureMidi() {
-    if(navigator.requestMIDIAccess !== undefined) {
-      navigator.requestMIDIAccess({sysex:true}).then(
-      (midiAccess) => { 
-        this.setState({ midi: midiAccess });
+      midiAccess.onstatechange = () => { 
+        this.setState({ midiAccess: midiAccess })
+      };
 
-        midiAccess.onstatechange = (e) => {
-          this.setState({ midi: midiAccess })
-        };
-
-        midiAccess.inputs.forEach((port) => {
-            this.toggleMidiPort(port)
-        })
-      },
-      (error) => { console.log('Oops: ' + error.statusCode) });
-    }
-  }
-
-  toggleMidiPort(port) {
-    if (port == null || port.type != 'input')
-      return
-
-    if (port.connection === 'closed') {
-      port.open();
-      port.onmidimessage = this.handleMidiEvent;
-    }
-    else
-      port.close();
+      Midi.openAllPorts(midiAccess, this.handleMidiEvent.bind(this));
+    });
   }
 
   handleMidiEvent(e) {
-    console.log(e)
+    let statusCode = e.data[0];
+    let note = e.data[1];
+
+    // note on
+    if (statusCode >= 144 && statusCode <= 159)
+      this.setState({ noteStack: this.state.noteStack.concat([note]) })
+
+    // note off
+    if (statusCode >= 128 && statusCode <= 143) {
+      let index = this.state.noteStack.indexOf(note)
+      if (index > -1)
+        this.setState({ 
+          noteStack: update(this.state.noteStack, { $splice: [[index, 1]] }) 
+        })
+    }
   }
 
   toggleSettings() {
@@ -66,12 +71,14 @@ export default class App extends Component {
         <Controls />
         <MuiThemeProvider muiTheme={getMuiTheme(darkBaseTheme)}>
           <Settings 
-            toggle={this.toggleSettings.bind(this)} 
-            open={this.state.settings} 
-            midi={this.state.midi}
-            toggleMidi={this.toggleMidiPort.bind(this)}
+            open={this.toggleSettings.bind(this)} 
+            isOpen={this.state.settings} 
+            midi={this.state.midiAccess}
+            toggleMidi={Midi.togglePort}
+            midiEventHandler={this.handleMidiEvent.bind(this)}
           />
         </MuiThemeProvider>
+        <NoteStack notes={this.state.noteStack} />
         <Piano 
           octaves={4}
           midiBase={36}

@@ -42,12 +42,14 @@ export default class Piano extends Component {
 
   componentWillUnmount() {
     window.removeEventListener('resize', this.handleResize);
-    hotkey.addHandler(this.hotkeyHandler);
+    hotkey.removeHandler(this.hotkeyHandler);
   }
 
-  shouldComponentUpdate() {
+  componentWillUpdate() {
+    for (var i = this.stage.children.length - 1; i >= 0; i--) 
+      this.stage.removeChild(this.stage.children[i])
+
     this.renderPiano();
-    return true;
   }
 
   handleHotkey(e) {
@@ -115,7 +117,7 @@ export default class Piano extends Component {
         var keyColor = key.isBlack ? 0x000000 : 0xF8F8F8;
         break;
       case 0:
-        var keyColor = parseInt(TinyColor(this.props.accentColor).toHex(), 16);
+        var keyColor = parseInt(TinyColor(this.props.accentColor).darken(0).toHex(), 16);
         break;
       case 1:
         var keyColor = parseInt(TinyColor(this.props.accentColor).darken(10).toHex(), 16)
@@ -151,14 +153,15 @@ export default class Piano extends Component {
         });
       text.x = xPos + keyWidth / 10;
       text.y = this.h - 10;
-      text.resolution = 8;
+      text.resolution = 4;
       this.stage.addChild(text)
       
     }
     
   }
 
-  toggleKey(key) {
+  toggleKey(key, e) {
+    e.stopPropagation();
     var keys = this.state.keys;
 
     if (key.unisons === -1)
