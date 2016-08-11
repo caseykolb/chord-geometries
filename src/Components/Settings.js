@@ -30,11 +30,12 @@ var Settings = (props) => {
 		})
 	}
 
-	return (<div>
+	return (<div className={css(styles.toggleButton)}>
 		<RaisedButton
 			onTouchTap={props.open}
-	    backgroundColor="#a4c639"
-	    icon={<ActionSettings color={fullWhite} />}
+	    	backgroundColor="#a4c639"
+	    	icon={<ActionSettings color={fullWhite}
+	    />}
 	    />
 		<Drawer
 			docked={false}
@@ -63,7 +64,11 @@ export default Settings;
 
 /* Aphrodite Styles */
 const styles = StyleSheet.create({
-    title: {
-    	'text-align': 'center'
-    }
+	toggleButton: {
+		position: 'fixed'	,
+		zIndex: 10
+	},
+  title: {
+  	'text-align': 'center'
+  }
 });

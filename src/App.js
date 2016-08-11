@@ -2,14 +2,14 @@
 import React, { Component } from 'react';
 import update from 'react-addons-update';
 
-// Components
+// React Components
 import Geometry from './Components/Geometry'
 import Piano from './Components/Piano'
 import NoteStack from './Components/NoteStack'
 import Controls from './Components/Controls'
 import Settings from './Components/Settings'
 
-// Utilities
+// Utility Modules
 import Midi from './Utils/Midi'
 
 // Themes and CSS
@@ -26,12 +26,11 @@ export default class App extends Component {
       midiAccess: null,
       settings: false,
       noteStack: [],
-      keys: new Array(128),
-      commandHeld: false
+      octave: 12,
     }
   }
 
-  componentWillMount() {
+  componentDidMount() {
     Midi.getInputs((midiAccess) => {
       this.setState({ midiAccess: midiAccess });
 
@@ -49,7 +48,9 @@ export default class App extends Component {
 
     // note on
     if (statusCode >= 144 && statusCode <= 159)
-      this.setState({ noteStack: this.state.noteStack.concat([note]) })
+      this.setState({ 
+      	noteStack: this.state.noteStack.concat([note]) 
+      })
 
     // note off
     if (statusCode >= 128 && statusCode <= 143) {
@@ -58,6 +59,21 @@ export default class App extends Component {
         this.setState({ 
           noteStack: update(this.state.noteStack, { $splice: [[index, 1]] }) 
         })
+    }
+  }
+
+  handlePianoEvent(key, increment) {
+    if (increment) {
+      this.setState({ 
+      	noteStack: this.state.noteStack.concat([key.note]) 
+      })
+    }
+    else {
+      let index = this.state.noteStack.indexOf(key.note)
+      if (index > -1)
+      	this.setState({ 
+      		noteStack: update(this.state.noteStack, { $splice: [[index, 1]] }) 
+      	})     
     }
   }
 
@@ -78,11 +94,15 @@ export default class App extends Component {
             midiEventHandler={this.handleMidiEvent.bind(this)}
           />
         </MuiThemeProvider>
+        <Geometry notes={this.state.noteStack} octave={this.state.octave}/>
         <NoteStack notes={this.state.noteStack} />
-        <Piano 
+        <Piano
           octaves={4}
           midiBase={36}
+          height={150}
           accentColor="#add8e6"
+          noteStack={this.state.noteStack}
+          onClick={this.handlePianoEvent.bind(this)}
         />
       </div>
     );

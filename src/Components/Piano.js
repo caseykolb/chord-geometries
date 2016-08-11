@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import update from 'react-addons-update';
 import PIXI from 'pixi.js';
 import TinyColor from 'tinycolor2';
 import hotkey from 'react-hotkey';
@@ -17,11 +18,9 @@ export default class Piano extends Component {
     hotkey.activate('keyup');
     this.hotkeyHandler = this.handleHotkey.bind(this);
 
-    this.res = 2; // renderer resolution
-    this.w = window.innerWidth / this.res; // renderer width adjusted for resolution boost
-    this.h = 150 / this.res; // renderer height adjusted for resolution boost
-    this.numKeys = this.props.octaves * 12; // total number of visible piano keys
-    this.octaveConfig = [false, true, false, true, false, false, true, false, true, false, true, false]
+    const res = this.res = 2; // renderer resolution
+    const height = this.h = props.height / this.res; // renderer height adjusted for resolution boost
+    const octaveConfig = this.octaveConfig = [false, true, false, true, false, false, true, false, true, false, true, false]
     this.animate = this.animate.bind(this);
   }
 
@@ -29,15 +28,17 @@ export default class Piano extends Component {
     window.addEventListener('resize', this.handleResize.bind(this));
     hotkey.addHandler(this.hotkeyHandler);
 
+    const width = window.innerWidth / this.res;
+
     // turn off pixi console log
     PIXI.utils._saidHello = true;
-    this.renderer = PIXI.autoDetectRenderer(this.w, this.h, {transparent: true, resolution: this.res});
+    this.renderer = PIXI.autoDetectRenderer(width, this.h, {transparent: true, resolution: this.res});
     this.refs.pianoCanvas.appendChild(this.renderer.view);
     this.stage = new PIXI.Container();
     this.stage.interactive = true;
     this.animate();
 
-    this.generatePiano();
+    this.generatePiano(this.props.noteStack);
   }
 
   componentWillUnmount() {
@@ -46,94 +47,72 @@ export default class Piano extends Component {
   }
 
   componentWillUpdate() {
-    for (var i = this.stage.children.length - 1; i >= 0; i--) 
-      this.stage.removeChild(this.stage.children[i])
-
     this.renderPiano();
   }
 
+  componentWillReceiveProps(nextProps) {
+  	this.generatePiano(nextProps.noteStack)
+  }
+
   handleHotkey(e) {
-    // if command-key is down, add unisons
-    if (e.which === 91)
+    // if option-key is down, add unisons
+    if (e.which === 18)
         this.setState({ addUnison: e.type === 'keydown' ? true : false })
   }
 
   handleResize() {
-    this.w = window.innerWidth / this.res;
     this.renderer.view.style.width = window.innerWidth + 'px';
     this.renderPiano();
   }
 
-  generatePiano() {
-    var keys = [];
-    let numKeys = this.props.octaves * 12;
-    for (var i = 0; i < numKeys; i++) {
-      var key = {
-        note: this.props.midiBase + i,
+  generatePiano(noteStack) {
+    var keys = new Array(128); // number of possible midi notes
+    let numVisibleKeys = this.props.octaves * 12;
+    let lowerBound = this.props.midiBase;
+    let upperBound = this.props.midiBase + numVisibleKeys;
+
+    // build array of keys both visible and invisible
+    for (var i = 0; i < keys.length; i++) {
+    	// count occurrences of key in current note stack
+    	let count = 0;
+			for(var note of noteStack)
+			    if(note === i) count++;
+
+      keys[i] = {
+        note: i,
         isBlack: this.octaveConfig[i % 12],
-        unisons: -1, // -1 is inactive, 0 is a single note, 1 and more are unisons
+        isVisible: (i >= lowerBound && i <= upperBound),
+        unisons: count - 1, // -1 is inactive, 0 is a single note, 1 and more are unisons
       }
-      keys.push(key)
     }
     this.setState({ keys: keys }, () => { this.renderPiano() })
   }
 
   renderPiano() {
-    this.renderer.clear();
+    for (var i = this.stage.children.length - 1; i >= 0; i--) 
+      this.stage.removeChild(this.stage.children[i])
 
     // draw white keys first
     for (var key of this.state.keys)
-      if (!key.isBlack) this.renderKey(key);
+      if (!key.isBlack && key.isVisible) this.renderKey(key);
 
     // draw black keys to preserve depth
     for (var key of this.state.keys)
-      if (key.isBlack) this.renderKey(key);
+      if (key.isBlack && key.isVisible) this.renderKey(key);
   }
 
   renderKey(key) {
+  	const width = window.innerWidth / 2;
     const numWhiteKeys = (this.props.octaves * 7);
     // black key should be half width of white key
-    const keyWidth = key.isBlack ? (this.w / numWhiteKeys / 2) : (this.w / numWhiteKeys);
+    const keyWidth = key.isBlack ? (width / numWhiteKeys / 2) : (width / numWhiteKeys);
     const keyHeight = key.isBlack ? (this.h / 2) : this.h;
-    var keyIndex = key.note - this.props.midiBase;
+    let xPos = this.findKeyPosition(key)
 
-    // funky algorithm to adjust white and black key indices to position properly
-    var diff = 0;
-    if (!key.isBlack) {
-      for (var i = 0; i < keyIndex; i++) 
-        if (this.octaveConfig[i % 12]) diff++;
-      keyIndex -= diff;
-    }
-    else {
-      for (var i = 0; i < keyIndex; i++)
-        if (!this.octaveConfig[i % 12]) diff++;
-      keyIndex = diff - 1;
-    }
-    const xPos = key.isBlack ? (keyIndex / numWhiteKeys * this.w) + (keyWidth * 1.5) 
-                             : (keyIndex / numWhiteKeys * this.w);
-
-    switch (key.unisons) {
-      case -1:
-        var keyColor = key.isBlack ? 0x000000 : 0xF8F8F8;
-        break;
-      case 0:
-        var keyColor = parseInt(TinyColor(this.props.accentColor).darken(0).toHex(), 16);
-        break;
-      case 1:
-        var keyColor = parseInt(TinyColor(this.props.accentColor).darken(10).toHex(), 16)
-        break;
-      case 2:
-        var keyColor = parseInt(TinyColor(this.props.accentColor).darken(20).toHex(), 16)
-        break;
-      case 3:
-        var keyColor = parseInt(TinyColor(this.props.accentColor).darken(30).toHex(), 16)
-        break;
-      case 4:
-        var keyColor = parseInt(TinyColor(this.props.accentColor).darken(40).toHex(), 16)
-        break;
-      default:
-        var keyColor = key.isBlack ? 0x000000 : 0xF8F8F8;
-    }
+    if (key.unisons === -1)
+      var keyColor = key.isBlack ? 0x000000 : 0xF8F8F8;
+    else 
+      var keyColor = parseInt(TinyColor(this.props.accentColor).darken(key.unisons * 10).toHex(), 16);
 
     var keyGraphic = new PIXI.Graphics();
     keyGraphic.interactive = true;
@@ -147,7 +126,8 @@ export default class Piano extends Component {
 
     if (key.note % 12 === 0) {
       var text = new PIXI.Text('C' + (key.note / 12), 
-        { fontSize: '6px', 
+        { 
+        	fontSize: '6px', 
           fill: key.unisons > -1 ? 0xFFFFFF : 0xD3D3D3, 
           align: 'center' 
         });
@@ -155,9 +135,31 @@ export default class Piano extends Component {
       text.y = this.h - 10;
       text.resolution = 4;
       this.stage.addChild(text)
-      
+    }
+  }
+
+  findKeyPosition(key) {
+  	const width = window.innerWidth / 2;
+    const numWhiteKeys = (this.props.octaves * 7);
+    const keyWidth = key.isBlack ? (width / numWhiteKeys / 2) : (width / numWhiteKeys);
+    const keyHeight = key.isBlack ? (this.h / 2) : this.h;
+    let keyIndex = key.note - this.props.midiBase;
+
+    // funky algorithm to adjust white and black key indices to position properly
+    var diff = 0;
+    if (!key.isBlack) {
+      for (var i = 0; i < keyIndex; i++) 
+        if (this.octaveConfig[i % 12]) diff++;
+      keyIndex -= diff;
+    }
+    else {
+      for (var i = 0; i < keyIndex; i++)
+        if (!this.octaveConfig[i % 12]) diff++;
+      keyIndex = diff - 1;
     }
     
+    return key.isBlack ? (keyIndex / numWhiteKeys * width) + (keyWidth * 1.5) 
+                       : (keyIndex / numWhiteKeys * width);
   }
 
   toggleKey(key, e) {
@@ -165,15 +167,15 @@ export default class Piano extends Component {
     var keys = this.state.keys;
 
     if (key.unisons === -1)
-      keys[key.note - this.props.midiBase].unisons++;
+      this.props.onClick(key, true)
     else if (this.state.addUnison) {
       if (key.unisons < 4)
-        keys[key.note - this.props.midiBase].unisons++;
+        this.props.onClick(key, true)
     }
     else
-      keys[key.note - this.props.midiBase].unisons--;
+      this.props.onClick(key, false)
 
-    this.setState({ keys: keys })
+    
   }
 
   animate() {
@@ -184,6 +186,15 @@ export default class Piano extends Component {
   render() {
   	return <div className={css(styles.piano)} ref="pianoCanvas"></div>
   }
+}
+
+Piano.propTypes = {
+	octaves: React.PropTypes.number.isRequired,
+  midiBase: React.PropTypes.number.isRequired,
+  height: React.PropTypes.number.isRequired,
+  accentColor: React.PropTypes.string.isRequired,
+  noteStack: React.PropTypes.array.isRequired,
+  onClick: React.PropTypes.func.isRequired,
 }
 
 /* Aphrodite Styles */

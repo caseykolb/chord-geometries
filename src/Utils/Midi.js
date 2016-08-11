@@ -15,7 +15,7 @@ var Midi = {
       return
     if (port.connection === 'closed') {
       port.open();
-      port.onmidimessage = eventHandler;
+      port.onmidimessage = (eventHandler !== null) ? eventHandler : null;
     }
     else
       port.close();

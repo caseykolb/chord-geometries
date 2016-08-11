@@ -6,9 +6,9 @@ var NoteStack = (props) => {
 
   return <ul className={css(styles.notes)}>
       {props.notes.map( (note, index) => {
-	        return <li className={css(styles.note)} key={index}>
-	        	{noteNames[note % 12] + Math.round(note / 12).toString()}
-	        </li>
+        return <li className={css(styles.note)} key={index}>
+        	{noteNames[note % 12] + Math.floor(note / 12).toString()}
+        </li>
       })}
     </ul>
 }
@@ -31,5 +31,6 @@ const styles = StyleSheet.create({
   },
   note: {
     listStyleType: 'none',
+    color: 'white'
   }
 });
