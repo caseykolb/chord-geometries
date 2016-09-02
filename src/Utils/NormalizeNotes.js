@@ -59,46 +59,44 @@ export function normalizeNotesVariant(notes, octaveMod) {
 			tempNotes.push(octaveMod)
 	}
 
-	tempNotes.sort((a, b) => a - b);
-	var lowestPC = tempNotes[0];
-
-	// zero base
-	for (var i = 0; i < tempNotes.length; i++)
-		tempNotes[i] = tempNotes[i] - lowestPC;
-
-	var inversion = tempNotes.slice();
-	var inversions = tempNotes.length;
-	var bestSpan = octaveMod; // temporarily set bestSpan to modulus
+	tempNotes.sort((a, b) => a - b); // sort from lowest to highest
+	
+	var inversion = tempNotes.slice(); // copy array for 
+	var numInversions = tempNotes.length; // total number of inversions is equal to length
+	var bestFirstInterval = octaveMod; // temporarily set bestFirstInterval to modulus
 
 	// cycle through inversions to find best first interval
-	for (var i = 0; i < inversions; i++) {
-		lowestPC = inversion[0];
+	for (var i = 0; i < numInversions; i++) {
+		let lowestPC = inversion[0];
 
-		// zero base
+		// convert inversion to start at 0
 		for (var j = 0; j < inversion.length; j++) {
-			if (inversion[j] - lowestPC < 0)
+			// wrap around octave, if necessary
+			if (inversion[j] - lowestPC < 0) 
 				inversion[j] = octaveMod - lowestPC + inversion[j];
 			else
 				inversion[j] = inversion[j] - lowestPC;
 		}
 
-		// x2 - x1
-		let firstInterval = inversion[1] - inversion[0];
+		
+		let firstInterval = inversion[1] - inversion[0]; // x2 - x1
 		let validNormalForm = true;
 
 		// ensure x_2 - x_1 <= x_n - x_(n-1) for all n
+		// if not, inversion is not valid, so continue
 		for (var n = 1; n < inversion.length - 1; n++) {
-			if (inversion[n + 1] - inversion[n] < firstInterval) {
+			if (inversion[n + 1] - inversion[n] < firstInterval)
 				validNormalForm = false;
-			}
 		}
 
-		if (firstInterval < bestSpan && validNormalForm) {
-			bestSpan = firstInterval;
+		// if inversion has a smaller first interval, and is a valid normal form
+		// then update the winner
+		if (firstInterval < bestFirstInterval && validNormalForm) {
+			bestFirstInterval = firstInterval;
 			tempNotes = inversion.slice();
 		}
 
-		// shift elements - new inversion
+		// shift elements in order to make next inversion
 		inversion.push(inversion[0]);
 		inversion.shift();
 	}
