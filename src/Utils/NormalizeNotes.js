@@ -50,6 +50,8 @@ export function normalizeNotesVariant(notes, octaveMod) {
 		return notes
 
 	let tempNotes = [];
+
+	// accounts for cases when note is 12
 	for (var note of notes) {
 		if (note !== octaveMod)
 			tempNotes.push(note % octaveMod);
@@ -66,33 +68,32 @@ export function normalizeNotesVariant(notes, octaveMod) {
 
 	var inversion = tempNotes.slice();
 	var inversions = tempNotes.length;
-	var bestSpan = octaveMod;
+	var bestSpan = octaveMod; // temporarily set bestSpan to modulus
 
-	// cycle through inversions to find best span
+	// cycle through inversions to find best first interval
 	for (var i = 0; i < inversions; i++) {
 		lowestPC = inversion[0];
 
 		// zero base
 		for (var j = 0; j < inversion.length; j++) {
-			//if (inversion[j] - lowestPC < 0)
-			//	inversion[j] = octaveMod - lowestPC + inversion[j];
-			//else
+			if (inversion[j] - lowestPC < 0)
+				inversion[j] = octaveMod - lowestPC + inversion[j];
+			else
 				inversion[j] = inversion[j] - lowestPC;
 		}
 
 		// x2 - x1
 		let firstInterval = inversion[1] - inversion[0];
-		//let currentSpan = inversion[inversion.length - 1] - inversion[0];
-		//let validNormalForm = true;
+		let validNormalForm = true;
 
 		// ensure x_2 - x_1 <= x_n - x_(n-1) for all n
-		/*for (var n = 1; n < inversion.length - 1; n++) {
+		for (var n = 1; n < inversion.length - 1; n++) {
 			if (inversion[n + 1] - inversion[n] < firstInterval) {
 				validNormalForm = false;
 			}
-		}*/
+		}
 
-		if (firstInterval < bestSpan) {
+		if (firstInterval < bestSpan && validNormalForm) {
 			bestSpan = firstInterval;
 			tempNotes = inversion.slice();
 		}

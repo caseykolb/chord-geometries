@@ -99,7 +99,7 @@ export function buildTriadicChordTypes(octaveMod, setClasses, activePCs) {
 			let positions = NoteMapping.triadicChordTypes([x, y, z], octaveMod)
 			let color = NoteMapping.color([x, y, z], octaveMod);
 			let tempNotes = normalizeNotesVariant([x, y, z], octaveMod);
-			let label = tempNotes[0].toString() + tempNotes[1].toString() + ' ' + tempNotes[2].toString();
+			let label = tempNotes[0].toString() + ' ' + tempNotes[1].toString() + ' ' + tempNotes[2].toString();
 
 			nodes.push({ 
 				position: positions[0], 
