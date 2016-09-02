@@ -52,23 +52,9 @@ var Parameters = (props) => {
 				>
 				<Grid fluid>
 					<Row>
-						<Col sm={12} md={12}>
-						<h3>Active Set Classes</h3>
-						<div className={css(styles.chipWrapper)}>
-							{props.setClasses.map((setClass, index) => {
-								return <Chip
-									        key={index}
-									        style={{margin: 12}}
-									        onRequestDelete={() => props.removeSetClass(index)}
-									    >
-									        {setClass.toString().replace(/,/g, ' ')}
-									    </Chip>
-							})}
-						</div>
-						</Col>
-					</Row>
-					<Row>
+						
 						<Col sm={12} md={6}>
+						<h3>Active Set Classes</h3>
 							<SelectField
 								floatingLabelText='Select a preset'
 								value={props.setClasses} 
@@ -91,6 +77,21 @@ var Parameters = (props) => {
 						        <MenuItem value={TriadicSetClasses.harmonic_minor_triads} primaryText="Harmonic Minor Triads" />
 						        <MenuItem value={TriadicSetClasses.diatonic_consonances} primaryText="Diatonic Consonances" />
 							</SelectField>
+						</Col>
+					</Row>
+					<Row>
+						<Col sm={12} md={12}>
+						<div className={css(styles.chipWrapper)}>
+							{props.setClasses.map((setClass, index) => {
+								return <Chip
+									        key={index}
+									        style={{margin: 12}}
+									        onRequestDelete={() => props.removeSetClass(index)}
+									    >
+									        {setClass.toString().replace(/,/g, ' ')}
+									    </Chip>
+							})}
+						</div>
 						</Col>
 					</Row>
 		    	</Grid>

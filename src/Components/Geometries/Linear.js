@@ -3,7 +3,7 @@ import THREE from 'three';
 import React3 from 'react-three-renderer';
 import NoteNode from './NoteNode'
 
-var Linear = (props) => {
+const Linear = (props) => {
 	if (!props.active)
 		return	<group/>
 

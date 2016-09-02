@@ -51,9 +51,9 @@ export default class App extends Component {
      	midiBase: 24,
      	octaves: window.innerWidth < 800 ? 2 : 5,
      	autoLength: 4,
-     	activeGeometry: 'Triadic',
+     	activeGeometry: 'TriadicChordTypes',
      	activePCs: Scales.chromatic,
-     	setClasses: TriadicSetClasses.cube_dance,
+     	setClasses: TetrachordalSetClasses.multisets_only,
      	voiceleading: {
 	     	singleStepVL: true,
 	     	twoVoiceParallel: false,

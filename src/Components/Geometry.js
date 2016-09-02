@@ -32,7 +32,10 @@ export default class Geometry extends Component {
       helical: new THREE.Vector3(-52, 6.4, 47),
       dyadic: new THREE.Vector3(0.1, 8.2, 100),
       dyadicSetClass: new THREE.Vector3(0.1, 8.2, 100),
-      triadic: new THREE.Vector3(25, 108, -54)
+      triadic: new THREE.Vector3(31.6, 156, -120),
+      triadicChordTypes: new THREE.Vector3(25, 108, -54),
+      triadicSetClass: new THREE.Vector3(25, 108, -54),
+      tetrachordal: new THREE.Vector3(25, 108, -54),
     }
 
     this.state = { 
@@ -63,7 +66,6 @@ export default class Geometry extends Component {
     controls.maxDistance = 200;
 
     controls.addEventListener('change', (e) => {
-      //console.log(e.target.object.position)
       this.setState({ cameraPosition: this.refs.camera.position });
     });
 
@@ -80,7 +82,9 @@ export default class Geometry extends Component {
       this.setState({ prevNotes: nextProps.notes })
   }
 
-  shouldComponentUpdate(nextProps) {
+  shouldComponentUpdate(nextProps, nextState) {
+    return true;
+
     if (nextProps.activeGeometry !== this.props.activeGeometry)
       return true;
 
@@ -90,8 +94,7 @@ export default class Geometry extends Component {
     if (arraysEqual(nextProps.setClasses, this.props.setClasses))
       return true;
     
-    else
-      return JSON.stringify(nextProps.notes) !== JSON.stringify(this.state.prevNotes);
+    return !arraysEqual(nextProps.notes, this.state.prevNotes);
   }
 
   updateCameraPosition(activeGeometry) {
@@ -115,10 +118,13 @@ export default class Geometry extends Component {
         this.setState({ cameraPosition: this.cameraPositions.triadic });
         break;
       case 'TriadicChordTypes':
-        this.setState({ cameraPosition: this.cameraPositions.linear });
+        this.setState({ cameraPosition: this.cameraPositions.triadicChordTypes });
+        break;
+      case 'TriadicSetClass':
+        this.setState({ cameraPosition: this.cameraPositions.triadicSetClass });
         break;
       case 'Tetrachordal':
-        this.setState({ cameraPosition: this.cameraPositions.linear });
+        this.setState({ cameraPosition: this.cameraPositions.tetrachordal });
         break;
       default:
         this.setState({ cameraPosition: this.cameraPositions.linear });
@@ -141,34 +147,48 @@ export default class Geometry extends Component {
   }
 
   render() {
-    let positions;
+    let positions, label;
+
     switch (this.props.activeGeometry) {
       case 'Linear':
         positions = NoteMapping.linear(this.state.prevNotes, this.props.octaveMod);
+        label = true;
         break;
       case 'Circular':
         positions = NoteMapping.circular(this.state.prevNotes, this.props.octaveMod);
+        label = true;
         break;
       case 'Helical':
         positions = NoteMapping.helical(this.state.prevNotes, this.props.octaveMod);
+        label = true;
         break;
       case 'Dyadic':
         positions = NoteMapping.dyadic(this.state.prevNotes, this.props.octaveMod);
+        label = false;
         break;
       case 'DyadicSetClass':
         positions = NoteMapping.dyadicSetClass(this.state.prevNotes, this.props.octaveMod);
+        label = false;
         break;
       case 'Triadic':
         positions = NoteMapping.triadic(this.state.prevNotes, this.props.octaveMod);
+        label = false;
         break;
       case 'TriadicChordTypes':
         positions = NoteMapping.triadicChordTypes(this.state.prevNotes, this.props.octaveMod);
+        label = false;
+        if (positions.length === 2)
+          positions = [positions[0]];
         break;
       case 'Tetrachordal':
         positions = NoteMapping.tetrachordal(this.state.prevNotes, this.props.octaveMod);
+        label = false;
+        if (positions.length === 2)
+          positions = [positions[0]];
         break;
       default:
         positions = [];
+        label = false;
     }
 
     const nodeColor = NoteMapping.color(this.state.prevNotes, this.props.octaveMod);
@@ -221,12 +241,14 @@ export default class Geometry extends Component {
             octaveMod={this.props.octaveMod}
             activePCs={this.props.activePCs}
             setClasses={this.props.setClasses}
+            cameraPosition={this.state.cameraPosition}
           />
           <DyadicSetClass
             active={this.props.activeGeometry === 'DyadicSetClass'}
             octaveMod={this.props.octaveMod}
             activePCs={this.props.activePCs}
             setClasses={this.props.setClasses}
+            cameraPosition={this.state.cameraPosition}
           />
           <Triadic
             active={this.props.activeGeometry === 'Triadic'}
@@ -234,19 +256,30 @@ export default class Geometry extends Component {
             activePCs={this.props.activePCs}
             setClasses={this.props.setClasses}
             voiceleading={this.props.voiceleading}
+            cameraPosition={this.state.cameraPosition}
           />
           <TriadicChordTypes
             active={this.props.activeGeometry === 'TriadicChordTypes'}
             octaveMod={this.props.octaveMod}
+            cameraPosition={this.state.cameraPosition}
           />
           <Tetrachordal
             active={this.props.activeGeometry === 'Tetrachordal'}
             octaveMod={this.props.octaveMod}
             activePCs={this.props.activePCs}
             setClasses={this.props.setClasses}
+            cameraPosition={this.state.cameraPosition}
           />
           {positions.map((position, index) => {
-              return <NoteNode key={index} position={position} size={1.5} color={nodeColor}/>
+              return <NoteNode 
+                key={index} 
+                position={position} 
+                size={1.5}
+                label={label ? Math.round(this.state.prevNotes[index]).toString() : null}
+                mapLabel={true}
+                cameraPosition={this.state.cameraPosition}
+                color={nodeColor}
+              />
           })}
         </scene>
       </React3>);

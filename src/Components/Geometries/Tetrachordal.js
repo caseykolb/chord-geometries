@@ -31,7 +31,7 @@ const Tetrachordal = React.createClass({
 		let full = mod * spacing;
 		let half = mod / 2 * spacing;
 
-		// draw bounding box for triangular prism
+		// draw bounding box
 		/*let vertices = [
 
 		]*/
@@ -42,7 +42,14 @@ const Tetrachordal = React.createClass({
 			        <lineBasicMaterial color={"white"} linewidth={2}/>
 			    </line>*/}
 				{nodes.map((node, index) => {
-			      	return <NoteNode key={index} position={node.position} color={node.color}/>
+			      	return <NoteNode 
+				      				key={index} 
+				      				position={node.position} 
+				      				label={node.label} 
+				      				mapLabel={true} 
+				      				color={node.color}
+				      				cameraPosition={this.props.cameraPosition}
+				      			/>
 			    })}
 
        		</group>
@@ -53,7 +60,8 @@ Tetrachordal.propTypes = {
 	active: React.PropTypes.bool.isRequired,
 	octaveMod: React.PropTypes.number.isRequired,
 	activePCs: React.PropTypes.array.isRequired,
-	setClasses: React.PropTypes.arrayOf(React.PropTypes.array).isRequired
+	setClasses: React.PropTypes.arrayOf(React.PropTypes.array).isRequired,
+	cameraPosition: React.PropTypes.instanceOf(THREE.Vector3)
 }
 
 export default Tetrachordal;

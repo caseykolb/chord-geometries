@@ -6,7 +6,11 @@ import NoteMapping from '../../Utils/NoteMapping';
 import { buildTriads, buildVoiceLeading } from '../../Utils/NodeBuilder'
 import arraysEqual from '../../Utils/ArraysEqual'
 
-const Triadic = React.createClass({
+export default class Triadic extends Component {
+  	constructor() {
+    	super();
+    }
+
 	shouldComponentUpdate(nextProps) {
 		if (!arraysEqual(nextProps.activePCs, this.props.activePCs))
 			return true;
@@ -18,7 +22,7 @@ const Triadic = React.createClass({
 			return true;
 
 		return false;
-	},
+	}
 	
   	render() {
   		if (!this.props.active)
@@ -49,7 +53,14 @@ const Triadic = React.createClass({
 			        <lineBasicMaterial color={"white"} linewidth={2}/>
 			    </line>
 				{nodes.map((node, index) => {
-			      	return <NoteNode key={index} position={node.position} color={node.color}/>
+			      	return  <NoteNode 
+			      				key={index} 
+			      				position={node.position} 
+			      				label={node.label} 
+			      				mapLabel={true} 
+			      				color={node.color}
+			      				cameraPosition={this.props.cameraPosition}
+			      			/>
 			    })}
 			    {voiceLeadingLines.map((verts, index) => {
 			    	return  <line key={index}>
@@ -59,15 +70,16 @@ const Triadic = React.createClass({
 			    })}
 
        		</group>
-       	}
-})
+    }
+}
 
 Triadic.propTypes = {
 	active: React.PropTypes.bool.isRequired,
 	octaveMod: React.PropTypes.number.isRequired,
 	activePCs: React.PropTypes.array.isRequired,
 	setClasses: React.PropTypes.arrayOf(React.PropTypes.array).isRequired,
-	voiceleading: React.PropTypes.object.isRequired
+	voiceleading: React.PropTypes.object.isRequired,
+	cameraPosition: React.PropTypes.instanceOf(THREE.Vector3)
 }
 
 export default Triadic;

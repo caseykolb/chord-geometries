@@ -1,27 +1,40 @@
 import THREE from 'three';
 import TinyColor from 'tinycolor2';
-import { normalizeNotes } from '../Utils/NormalizeNotes'
+import { normalizeNotes, normalizeNotesVariant } from '../Utils/NormalizeNotes'
 
 var NoteMapping = {
 	color(notes, octaveMod) {
 		if (notes.length === 1)
 			return TinyColor({ h: 0, s: 0.51, l: .43 }).toHexString();
-		let normalizedNotes = [];
-		for (var note of notes) 
-			normalizedNotes.push(note % octaveMod)
-		normalizedNotes.sort((a, b) => a - b);
 
-		// computer average difference from first index
-		let total = 0;
-		for (var i = 1; i < normalizedNotes.length; i++)
-			total += normalizedNotes[i] - normalizedNotes[i-1];
+		let tempNotes = notes.slice();
+		tempNotes.sort((a, b) => a - b);
 
-		let mod = octaveMod / notes.length;
-		total = Math.abs(total);
-		if (total > mod)
-			total = octaveMod - total;
-		let average = total / (notes.length - 1);
-		let hue = 230 - ((average / mod) * 230);
+		// computer perfectly even chord
+		let perfectlyEven = [];
+		for (var i = 0; i < notes.length; i++)
+			perfectlyEven.push(i * octaveMod / notes.length)
+
+		// put both chords in zero-sum plane
+		let perfectlyEvenSum = perfectlyEven.reduce((a, b) => a + b, 0);
+		let tempNotesSum = tempNotes.reduce((a, b) => a + b, 0);
+
+		for (var i = 0; i < perfectlyEven.length; i++) {
+			tempNotes[i] = tempNotes[i] - (tempNotesSum / tempNotes.length);
+			perfectlyEven[i] = perfectlyEven[i] - (perfectlyEvenSum / perfectlyEven.length);
+		}
+
+		// compute distance to perfectly even chord
+		let dist = 0;
+		for (var i = 0; i < tempNotes.length; i++) {
+			let dist1 = (tempNotes[i] - perfectlyEven[i]) % octaveMod;
+			let dist2 = (perfectlyEven[i] - tempNotes[i]) % octaveMod;
+			dist += Math.min(dist1, dist2)
+		}
+
+		let maxDist = octaveMod - (octaveMod / notes.length);
+		let ratio = Math.abs(dist) / maxDist;
+		let hue = 230 * ratio;
 		return TinyColor({ h: hue, s: 0.51, l: .43 }).toHexString();
 	},
 
@@ -177,7 +190,18 @@ var NoteMapping = {
 			return [];
 		if (notes.length !== 3)
 			return [];
-		return this.notesToCoords(notes, octaveMod);
+
+		const spacing = 8;
+
+		let tempNotes = normalizeNotesVariant(notes, octaveMod);
+		let xDot = [-0.8164965809277261, 0.4082482904638631, 0.4082482904638631];
+		let yDot = [0, -0.7071067811865476, 0.7071067811865476];
+		let x = dotProduct(tempNotes, xDot);
+		let y = dotProduct(tempNotes, yDot);
+		return [new THREE.Vector3(x * spacing, y * spacing, 0)];
+
+		//let tempNotes = normalizeNotesVariant(notes, octaveMod);
+		//return this.notesToCoordsVariant(tempNotes, octaveMod);
 	},
 
 	tetrachordal(notes, octaveMod) {
@@ -185,15 +209,56 @@ var NoteMapping = {
 			return [];
 		if (notes.length !== 4)
 			return [];
-		return this.notesToCoords(notes, octaveMod);
+		let tempNotes = normalizeNotesVariant(notes, octaveMod);
+		return this.notesToCoordsVariant(tempNotes, octaveMod);
 	},
 
 	notesToCoords(notes, octaveMod) {
 		const spacing = 8;
 
-		let tempNotes =[];
+		let tempNotes = [];
 		for (var note of notes)
 			tempNotes.push(note % octaveMod);
+
+		tempNotes.sort((a, b) => a - b);
+
+		var sum = tempNotes.reduce((a, b) => a + b, 0);
+		
+		let lastIndex = tempNotes.length - 1;
+		while (sum > octaveMod) {
+			tempNotes[lastIndex] = tempNotes[lastIndex] - octaveMod;
+			tempNotes.sort((a, b) => a - b);
+			sum = tempNotes.reduce((a, b) => a + b, 0);
+		}
+
+		let x = tempNotes[0] * spacing;
+		let y = tempNotes[1] * spacing;
+		let z = tempNotes[2] * spacing;
+		let position = new THREE.Vector3(x, y, z);
+
+		// return mirror as well if x equals 0
+		if (sum === octaveMod) {
+			let mirrorX = (tempNotes[2] - octaveMod) * spacing;
+			let mirrorY = position.x;
+			let mirrorZ = position.y;
+			let mirrorPosition = new THREE.Vector3(mirrorX, mirrorY, mirrorZ);
+			return [position, mirrorPosition];
+		}
+		else if (sum === 0) {
+			let mirrorX = position.y;
+			let mirrorY = position.z;
+			let mirrorZ = (tempNotes[0] + octaveMod) * spacing;
+			let mirrorPosition = new THREE.Vector3(mirrorX, mirrorY, mirrorZ);
+			return [position, mirrorPosition];
+		}
+		else
+			return [position];	
+	},
+
+	notesToCoordsVariant(notes, octaveMod) {
+		const spacing = 8;
+
+		let tempNotes = notes.slice();
 
 		tempNotes.sort((a, b) => a - b);
 
@@ -231,6 +296,15 @@ var NoteMapping = {
 	}
 }
 
+function dotProduct(a1, a2) {
+	if (a1.length !== a2.length)
+		return null
+
+	let dot = 0;
+	for (var i = 0; i < a1.length; i++)
+		dot += a1[i] * a2[i];
+
+	return dot;
+}
+
 module.exports = NoteMapping;
-
-

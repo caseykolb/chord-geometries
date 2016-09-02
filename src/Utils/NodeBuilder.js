@@ -1,7 +1,7 @@
 import THREE from 'three';
 import NoteMapping from './NoteMapping';
 import arraysEqual from '../Utils/ArraysEqual'
-import { normalizeNotes } from '../Utils/NormalizeNotes'
+import { normalizeNotes, normalizeNotesVariant } from '../Utils/NormalizeNotes'
 
 export function buildDyads(octaveMod, activePCs) {
 	let nodes = [];
@@ -23,7 +23,12 @@ export function buildDyads(octaveMod, activePCs) {
 			var color = NoteMapping.color([x, y], octaveMod);
 
 			if (PCsVisible([x % octaveMod, y % octaveMod], activePCs)) {
-				nodes.push({ label: label, color: color, position: coords });
+				nodes.push({ 
+					label: label, 
+					color: color, 
+					position: coords,
+					mapLabel: false 
+				});
 
 				// add mirror to positive y nodes
 				if (y > 0) {
@@ -49,7 +54,12 @@ export function buildDyadicSetClass(octaveMod) {
 		var coords = new THREE.Vector3(0, -y * spacing + yOffset, 0);
 		var color = NoteMapping.color([0, y], octaveMod);
 		var label = (0).toString() + ' ' + y.toString();
-		nodes.push({ label: label, color: color, position: coords });
+		nodes.push({ 
+			label: label, 
+			color: color, 
+			position: coords,
+			mapLabel: false 
+		});
 	}
 	return nodes;
 }
@@ -62,11 +72,17 @@ export function buildTriads(octaveMod, setClasses, activePCs) {
 			for (var z = 0; z <= octaveMod; z++) {
 				let positions = NoteMapping.triadic([x, y, z], octaveMod)
 				let color = NoteMapping.color([x, y, z], octaveMod);
-				let notes = normalizeNotes([x, y, z], octaveMod)
+				let notes = normalizeNotes([x, y, z], octaveMod);
+				let label = x.toString() + ' ' + y.toString() + ' ' + z.toString();
 
 				if (setClassVisible(notes, setClasses) && PCsVisible([x, y, z], activePCs)) {
 					for (var position of positions)
-						nodes.push({ position: position, color: color, notes: [x, y, z] })
+						nodes.push({ 
+							position: position, 
+							color: color, 
+							notes: [x, y, z],
+							label: label
+						})
 				}
 			}
 		}
@@ -78,11 +94,18 @@ export function buildTriadicChordTypes(octaveMod, setClasses, activePCs) {
 	let nodes = [];
 	let x = 0;
 
-	for (var y = 0; y <= octaveMod; y++) {
-		for (var z = 0; z <= octaveMod; z++) {
-			let position = NoteMapping.triadicChordTypes([x, y, z], octaveMod)
+	for (var y = 0; y <= 12; y++) {
+		for (var z = y * 2; z <= 12; z++) {
+			let positions = NoteMapping.triadicChordTypes([x, y, z], octaveMod)
 			let color = NoteMapping.color([x, y, z], octaveMod);
-			nodes.push({ position: position[0], color: color })
+			let tempNotes = normalizeNotesVariant([x, y, z], octaveMod);
+			let label = tempNotes[0].toString() + tempNotes[1].toString() + ' ' + tempNotes[2].toString();
+
+			nodes.push({ 
+				position: positions[0], 
+				color: color,
+				label: label
+			})
 		}
 	}
 
@@ -98,11 +121,15 @@ export function buildTetrachords(octaveMod, setClasses, activePCs) {
 			for (var w = 0; w <= octaveMod; w++) {
 				let positions = NoteMapping.tetrachordal([x, y, z, w], octaveMod)
 				let color = NoteMapping.color([x, y, z, w], octaveMod);
-				let notes = normalizeNotes([x, y, z, w], octaveMod)
+				let notes = normalizeNotes([x, y, z, w], octaveMod);
+				let label = notes[0].toString() + ' ' + notes[1].toString() + ' ' + notes[2].toString() + ' ' + notes[3].toString();
 
 				if (setClassVisible(notes, setClasses) && PCsVisible([x, y, z, w], activePCs)) {
-					for (var position of positions)
-						nodes.push({ position: position, color: color })
+					nodes.push({ 
+						position: positions[0], 
+						color: color,
+						label: label
+					})
 				}
 			}
 		}
